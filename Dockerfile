@@ -5,14 +5,13 @@ FROM php:8.2-cli-alpine
 RUN apk add --no-cache curl
 
 # Chuyển thư mục làm việc vào /app
-WORKDIR /app
+WORKDIR /apps
 
 # Copy file index.php từ máy tính vào trong image
-COPY index.php /app/
+COPY index.php /apps/
 
 # Mở port 8000
 EXPOSE 8000
 
 # Khởi chạy server tích hợp sẵn của PHP. 
-# Chạy 1 process duy nhất -> Tối ưu RAM tuyệt đối.
 CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app"]
