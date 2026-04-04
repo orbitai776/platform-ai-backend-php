@@ -1,18 +1,42 @@
-# Dùng bản PHP CLI trên nền Alpine Linux (Cực kỳ nhẹ, chỉ khoảng ~25-30MB)
+# 1. Dùng PHP 8.2 CLI Alpine
 FROM php:8.2-cli-alpine
 
-# Thêm thư viện curl cho hệ điều hành (thường bản php alpine đã có sẵn, nhưng cứ thêm cho chắc, --no-cache để không rác image)
-RUN apk add --no-cache curl
+# 2. Cài đặt các thư viện hệ thống cần thiết (Dành cho mbstring, xml, pgsql, curl)
+RUN apk add --no-cache \
+    curl \
+    libpq-dev \
+    libxml2-dev \
+    oniguruma-dev \
+    libpng-dev \
+    zip \
+    unzip
 
-# Chuyển thư mục làm việc vào /app
+# 3. Cài đặt các Extension PHP mà Laravel & Firebase bắt buộc phải có
+RUN docker-php-ext-install \
+    pdo \
+    pdo_pgsql \
+    mbstring \
+    xml \
+    bcmath \
+    ctype \
+    fileinfo
+
+# 4. Cài Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 5. Thiết lập thư mục làm việc
 WORKDIR /app
+COPY . /app
 
-# Copy file index.php từ máy tính vào trong image
-COPY index.php /app/
+# 6. Tăng giới hạn bộ nhớ cho Composer (Đề phòng máy ảo Docker bị yếu)
+ENV COMPOSER_MEMORY_LIMIT=-1
 
-# Mở port 8000
+# 7. CHẠY CÀI ĐẶT (Đã thêm các cờ để bỏ qua kiểm tra môi trường lúc build)
+RUN composer install --optimize-autoloader --no-scripts --ignore-platform-reqs
+RUN php artisan config:clear && php artisan route:clear
+# 8. Cấp quyền cho Laravel
+RUN chmod -R 777 /app/storage /app/bootstrap/cache
+
 EXPOSE 8000
 
-# Khởi chạy server tích hợp sẵn của PHP. 
-# Chạy 1 process duy nhất -> Tối ưu RAM tuyệt đối.
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app"]
+CMD ["php", "-S", "0.0.0.0:8000", "-t", "/app/public"]
