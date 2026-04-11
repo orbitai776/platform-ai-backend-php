@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: CI/CD Pipeline
 
 on:
   push:
@@ -53,7 +53,7 @@ jobs:
           REGISTRY: ${{ env.REGISTRY }}
           ENV: ${{ github.ref_name }}
           PORT: ${{ vars.PORT }}
-          CONTAINER: "${{ vars.APP_NAME }}-${{ github.ref_name }}"
+          CONTAINER: ${{ vars.CONTAINER }}
         #  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         #  FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
         #  FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}

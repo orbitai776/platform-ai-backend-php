@@ -3,3 +3,14 @@
 
 dist/**
 dist
+/vendor
+/node_modules
+/public/storage
+/storage/*.key
+.env
+.env.backup
+.phpunit.result.cache
+docker-compose.override.yml
+homestead.json
+homestead.yaml
+auth.json
