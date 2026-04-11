@@ -1,8 +1,0 @@
-node_modules
-vendor
-.git
-.env
-storage/*.zips
-docker-compose.yml
-Dockerfile
-.phpunit.result.cache
