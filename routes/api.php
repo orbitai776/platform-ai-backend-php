@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -14,12 +15,16 @@ use App\Http\Controllers\Api\AuthController;
 |
 */
 
+
 Route::prefix('v1/partner')->group(function () {
     
-    // API Login: sẽ có path là /api/v1/partner/auth/login
+    
     Route::post('/auth/login', [AuthController::class, 'login']);
 
     
-    
+    // Route::middleware(['role.partner'])->group(function () {
+    //     Route::get('/organization', [AuthController::class, 'show']);
+    //     Route::patch('/organization', [AuthController::class, 'update']);
+    // });
 });
 
