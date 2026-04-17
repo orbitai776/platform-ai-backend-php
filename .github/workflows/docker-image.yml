@@ -2,8 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "dev", "stg" ]
+    branches: [ "main", "stg", "dev" ]
   workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -14,16 +15,17 @@ jobs:
     permissions:
       contents: read
       packages: write
+      
     steps:
       - uses: actions/checkout@v4
-  
+      
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+      
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -48,17 +50,49 @@ jobs:
 
       - name: Deploy to VPS
         env:
-          BRANCH_NAME: ${{ github.ref_name }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           REGISTRY: ${{ env.REGISTRY }}
           ENV: ${{ github.ref_name }}
           PORT: ${{ vars.PORT }}
           CONTAINER: ${{ vars.CONTAINER }}
-        #  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-        #  FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-        #  FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_DEBUG: ${{ vars.APP_DEBUG }}
+          APP_URL: ${{ vars.APP_URL }}
+
+          LOG_CHANNEL: ${{ vars.LOG_CHANNEL }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL }}
+
+          DB_CONNECTION: ${{ vars.DB_CONNECTION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_LEEWAY: ${{ vars.JWT_LEEWAY }}
+
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+          BROADCAST_DRIVER: ${{ vars.BROADCAST_DRIVER }}
+          CACHE_DRIVER: ${{ vars.CACHE_DRIVER }}
+          FILESYSTEM_DISK: ${{ vars.FILESYSTEM_DISK }}
+          QUEUE_CONNECTION: ${{ vars.QUEUE_CONNECTION }}
+          SESSION_DRIVER: ${{ vars.SESSION_DRIVER }}
+          SESSION_LIFETIME: ${{ vars.SESSION_LIFETIME }}
+
+          MAIL_MAILER: ${{ vars.MAIL_MAILER }}
+          MAIL_HOST: ${{ vars.MAIL_HOST }}
+          MAIL_PORT: ${{ vars.MAIL_PORT }}
+          MAIL_USERNAME: ${{ vars.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ vars.MAIL_PASSWORD }}
+
         run: |
-          # Deploy commands
           ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOF
             echo "🔑 Logging to GHCR..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -75,17 +109,39 @@ jobs:
               --name $CONTAINER \
               --restart unless-stopped \
               -p $PORT:8000 \
-              -e APP_NAME=${{ env.CONTAINER }} \
-              -e APP_ENV=$ENV \
+              -e APP_NAME=$APP_NAME \
+              -e APP_ENV=$APP_ENV \
+              -e APP_KEY=$APP_KEY \
+              -e APP_DEBUG=$APP_DEBUG \
+              -e APP_URL=$APP_URL \
+              -e LOG_CHANNEL=$LOG_CHANNEL \
+              -e LOG_LEVEL=$LOG_LEVEL \
+              -e DB_CONNECTION=$DB_CONNECTION \
+              -e DB_HOST=$DB_HOST \
+              -e DB_PORT=$DB_PORT \
+              -e DB_DATABASE=$DB_DATABASE \
+              -e DB_USERNAME=$DB_USERNAME \
+              -e DB_PASSWORD=$DB_PASSWORD \
+              -e REDIS_URL=$REDIS_URL \
+              -e JWT_SECRET=$JWT_SECRET \
+              -e JWT_LEEWAY=$JWT_LEEWAY \
+              -e FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID \
+              -e BROADCAST_DRIVER=$BROADCAST_DRIVER \
+              -e CACHE_DRIVER=$CACHE_DRIVER \
+              -e FILESYSTEM_DISK=$FILESYSTEM_DISK \
+              -e QUEUE_CONNECTION=$QUEUE_CONNECTION \
+              -e SESSION_DRIVER=$SESSION_DRIVER \
+              -e SESSION_LIFETIME=$SESSION_LIFETIME \
+              -e MAIL_MAILER=$MAIL_MAILER \
+              -e MAIL_HOST=$MAIL_HOST \
+              -e MAIL_PORT=$MAIL_PORT \
+              -e MAIL_USERNAME=$MAIL_USERNAME \
+              -e MAIL_PASSWORD=$MAIL_PASSWORD \
               --log-opt max-size=10m \
               --log-opt max-file=3 \
               ghcr.io/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
             
             echo "✅ Deployment complete!"
-            echo "📋 Container status:"
             docker ps | grep $CONTAINER
-
-            # Dọn dẹp images cũ
-            echo "🧹 Cleaning up old images..."
             docker image prune -f
           EOF
